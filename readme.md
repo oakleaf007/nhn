@@ -6,7 +6,7 @@ it is a backend service for NHN - a single vendor application
 
 ### Setup
 
-- **npm install**  
+- ``npm install``  
 - create a **.env** file  
 Env variables are:  
 PORT  
