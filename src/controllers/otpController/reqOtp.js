@@ -10,10 +10,14 @@ export const reqOtp = async (req, res) => {
         const { email } = req.body;
 
 
+        if(!email || !email.includes('@')){
+             return res.status(400).json({ message: 'Email is not valid' });
+        }
+        console.log(email)
         const userCheck = await pool.query("select id from users where email = $1", [email.toLowerCase()]);
 
         if (userCheck.rows.length > 0) {
-            return res.status(400).json({ error: 'Email already registered' });
+            return res.status(400).json({ message: 'Email already registered' });
         }
 
         const otp = crypto.randomInt(100000, 999999).toString();
@@ -43,14 +47,18 @@ export const reqOtp = async (req, res) => {
     } catch (err) {
 
         console.error(err);
-        res.status(500).json({ error: 'server error whille processing otp' })
+        res.status(500).json({ message: 'server error whille processing otp'+ err })
     }
 }
 
 export const verifyOtp = async (req, res) => {
     const { email, recOtp } = req.body;
-
+    console.log(req.body)
     try {
+        otpTrim = recOtp.trim();
+        if(!email || !otpTrim){
+            return res.status(400).json({message: "no email or otp recieved"})
+        }
         const emailLower = email.toLowerCase();
 
 
@@ -59,21 +67,21 @@ export const verifyOtp = async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.status(400).json({ error: "OTP not found or expired. Please request a new one." });
+            return res.status(400).json({ message: "OTP not found or expired. Please request a new one." });
         }
 
         const { otp, expires_at } = result.rows[0];
 
         if (new Date() > expires_at) {
             await pool.query("Delete from otps where email = $1", [emailLower]);
-            return res.status(400).json({ error: "otp has expired" });
+            return res.status(400).json({ message: "otp has expired" });
 
         }
 
 
-        const isMatch = await bcrypt.compare(recOtp, otp);
+        const isMatch = await bcrypt.compare(otpTrim, otp);
         if (!isMatch) {
-            return res.status(400).json({ error: "Invalid OTP code." });
+            return res.status(400).json({ message: "Invalid OTP code." });
         }
         const signupToken = jwt.sign({
             verifiedEmail: emailLower
@@ -81,14 +89,16 @@ export const verifyOtp = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
-
-        await pool.query("delete from otps where email = $1", [emailLower])
-        res.json({
+        console.log(signupToken)
+        await pool.query("delete from otps where email = $1", [emailLower]);
+        res.status(200).json({
+            success:true,
             message: "email verified",
             signupToken : signupToken
         });
+        
     } catch (err) {
         console.error("Verification error ", err);
-        res.status(500).json({error: "Server error during Verification"});
+        res.status(500).json({message: "Server error during Verification"});
     }
 }
