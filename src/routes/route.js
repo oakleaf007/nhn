@@ -1,5 +1,5 @@
 import express from "express";
-import { reqOtp } from "../controllers/otpController/reqotp.js";
+import { reqOtp } from "../controllers/otpController/reqOtp.js";
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.get("/test", (req,res)=>{
 
 router.post("/reqotp", reqOtp);
 
-import { verifyOtp } from "../controllers/otpController/reqotp.js";
+import { verifyOtp } from "../controllers/otpController/reqOtp.js";
 import { signup, login } from "../controllers/authController.js";
 
 router.post("/verifyotp", verifyOtp);
